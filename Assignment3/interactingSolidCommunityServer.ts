@@ -134,9 +134,7 @@ const runAsyncFunctions = async () => {
   });
 
   // Task 2
-  const response = await authFetch(
-    `${url}/Marcel/gazeData/currentActivity.ttl`
-  );
+  const response = await authFetch(`${url}/Marcel/.acl`);
 
   console.log(await response.text());
 
