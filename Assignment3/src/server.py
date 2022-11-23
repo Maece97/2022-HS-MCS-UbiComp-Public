@@ -313,11 +313,7 @@ def index_post():
     # print("DATA")
     print(request.json['gazeData'])
 
-    return {
-        "activity": "Search action",
-        "probability": "0.87",
-        "time": "2022-10-14T02:02:02Z",
-    }
+
 
     linear = joblib.load('random_forest.joblib')
     f = pd.DataFrame(getFeatures(request.json['gazeData']))
@@ -325,6 +321,15 @@ def index_post():
     features = f[["meanFix", "maxFix", "varFix", "xDir", "yDir", "fixDensPerBB", "blinkMean", "blinkRate", "stdDisp", "varDis"]]
     prediction = linear.predict(features[-1:])
     print(prediction)
+
+
+    return {
+        "activity": "Search action",
+        "probability": "0.87",
+        "time": "2022-10-14T02:02:02Z",
+    }
+
+
 
     return prediction[0]
 

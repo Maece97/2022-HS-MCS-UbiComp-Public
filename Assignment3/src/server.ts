@@ -1,12 +1,16 @@
 import {
   buildThing,
   getDatetime,
+  getFile,
   getSolidDataset,
+  getSourceUrl,
   getStringNoLocale,
   getThing,
+  overwriteFile,
   saveSolidDatasetAt,
   setThing,
   ThingPersisted,
+  universalAccess,
 } from "@inrupt/solid-client";
 import { PROV_O, SCHEMA_INRUPT } from "@inrupt/vocab-common-rdf";
 import axios from "axios";
@@ -16,6 +20,7 @@ import express from "express";
 import _ from "lodash";
 import WebSocket from "ws";
 import { getAuthFetch } from "../interactingSolidCommunityServer";
+import { Blob } from "buffer";
 dotenv.config();
 
 class CurrentActivity {
@@ -145,14 +150,35 @@ const saveCurrentActivity = async (currentActivity: CurrentActivity) => {
 };
 
 const saveRawGazeData = async (data: string) => {
-  // TODO: save data to solid csv.
+  const fetch = await getAuthFetch();
+  const file = await getFile(
+    `${url}/Marcel/gazeData/rawGazeData.csv`, // File in Pod to Read
+    { fetch: fetch } // fetch from authenticated session
+  );
+  let content = await file.text();
+  content += data + "\n";
+
+  try {
+    const savedFile = await overwriteFile(
+      `${url}/Marcel/gazeData/rawGazeData.csv`, // URL for the file.
+      // new Blob([content], { type: "text/csv" }), // Buffer containing file data
+      Buffer.from(content, "utf8"),
+      {
+        contentType: "text/csv",
+        fetch: fetch,
+      } // mimetype if known, fetch from the authenticated session
+    );
+    console.log(`File saved at ${getSourceUrl(savedFile)}`);
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 const updateCurrentActivity = async () => {
   const a = _.cloneDeep(tempGazeData);
   tempGazeData.length = 0;
   const response = await axios.post(`http://localhost:3002`, {
-    gazeData: a,
+    gazeData: a.join(";"),
   });
   const data = response.data;
   // console.log("response", data);
@@ -163,11 +189,22 @@ const updateCurrentActivity = async () => {
 
 const handleIncomingGazeData = (data: string) => {
   tempGazeData.push(data);
-  saveRawGazeData(data);
-  console.log("data received ", data.toString());
-  if (tempGazeData.length >= 2) {
+  // saveRawGazeData(data);
+  // console.log("data received ", data.toString());
+  if (tempGazeData.length >= 500) {
     updateCurrentActivity();
   }
+};
+
+const grantAccessTo = async (webId: string) => {
+  const fetch = await getAuthFetch();
+  await universalAccess.setAgentAccess(
+    `${url}/Marcel//gazeData/currentActivity.ttl`, // Resource
+    webId, // Agent
+    { read: true }, // Access object
+    // @ts-ignore
+    { fetch: fetch } // fetch function from authenticated session
+  );
 };
 
 const connections: WebSocket[] = [];
@@ -179,6 +216,7 @@ const wss = new WebSocket.Server({ port: 3001 }, () => {
 wss.on("connection", async (ws) => {
   connections.push(ws);
   ws.on("message", (data) => {
+    // console.log("received: %s", data);
     handleIncomingGazeData(data.toString());
   });
   console.log("connected");
@@ -191,6 +229,7 @@ wss.on("listening", () => {
 // Subscribe to solid update events
 const notify = async () => {
   let socket = new WebSocket("ws://localhost:3000/", ["solid-0.1"]);
+  // TODO: optionally also subscribe to pods from other users we track.
   socket.onopen = function () {
     this.send(`sub ${url}/Marcel/gazeData/currentActivity.ttl`);
   };
@@ -214,6 +253,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
+});
+
+app.post("/grant-access", async (req, res) => {
+  await grantAccessTo(req.body.grantAccessTo);
+  res.send("Ok");
 });
 
 app.listen(port, () => {

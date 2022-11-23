@@ -37,7 +37,7 @@ const getSecret = async (): Promise<any[]> => {
     }),
   });
 
-  // console.log(await response0.json());
+  // console.log(await response0);
 
   // These are the identifier and secret of your token.
   // Store the secret somewhere safe as there is no way to request it again from the server!
@@ -192,12 +192,19 @@ const runAsyncFunctions = async () => {
   await createResource("myFamilyInfo.txt", "404 ;)");
 
   // Task 5
+  await createResource("gazeData/rawGazeData.csv", "");
+
+  await createResource(
+    "gazeData/rawGazeData.csv.acl",
+    `@prefix acl: <http://www.w3.org/ns/auth/acl#>. <#owner> a acl:Authorization;acl:default <./rawGazeData.csv>;acl:accessTo <./rawGazeData.csv>;acl:mode acl:Read, acl:Write, acl:Control;acl:agent <${url}/Marcel/profile/card#me>.`,
+    { "Content-Type": "text/n3" }
+  );
+
   await createResource(
     "gazeData/currentActivity.ttl",
     `@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .@prefix foaf: <http://xmlns.com/foaf/0.1/> . @prefix prov: <http://www.w3.org/ns/prov#> . @prefix schema: <http://schema.org/> . @prefix bm: <http://bimerr.iot.linkeddata.es/def/occupancy-profile#> . <${url}/Marcel/gazeData/currentActivity.ttl> a prov:Activity, schema:ReadAction; schema:name "Read action"^^xsd:string; prov:wasAssociatedWith <${url}/Marcel/profile/card#me>; prov:used <${url}/Marcel/gazeData/rawGazeData.csv>; prov:endedAtTime "2022-10-14T02:02:02Z"^^xsd:dateTime; bm:probability  "0.87"^^xsd:float. <${url}/Marcel/profile/card#me> a foaf:Person, prov:Agent; foaf:name "Marcel Mettler"; foaf:mbox <mailto:marcelthomas.mettler@student.unisg.ch>.`,
     { "Content-Type": "text/n3" }
   );
-  await createResource("gazeData/rawGazeData.csv");
 
   await createResource(
     "gazeData/currentActivity.ttl.acl",
@@ -206,4 +213,4 @@ const runAsyncFunctions = async () => {
   );
 };
 
-// runAsyncFunctions();
+runAsyncFunctions();
