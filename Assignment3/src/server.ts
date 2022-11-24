@@ -150,6 +150,7 @@ const saveCurrentActivity = async (currentActivity: CurrentActivity) => {
 };
 
 const saveRawGazeData = async (data: string) => {
+  // TODO better save not with every new gaze record but in batches
   const fetch = await getAuthFetch();
   const file = await getFile(
     `${url}/Marcel/gazeData/rawGazeData.csv`, // File in Pod to Read
@@ -189,7 +190,7 @@ const updateCurrentActivity = async () => {
 
 const handleIncomingGazeData = (data: string) => {
   tempGazeData.push(data);
-  // saveRawGazeData(data);
+  saveRawGazeData(data);
   // console.log("data received ", data.toString());
   if (tempGazeData.length >= 500) {
     updateCurrentActivity();
