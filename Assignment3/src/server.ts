@@ -197,6 +197,7 @@ const handleIncomingGazeData = (data: string) => {
 };
 
 const grantAccessTo = async (webId: string) => {
+  console.log("granting access to ", webId);
   const fetch = await getAuthFetch();
   await universalAccess.setAgentAccess(
     `${url}/Marcel//gazeData/currentActivity.ttl`, // Resource

@@ -2,6 +2,7 @@ from flask import Flask, request
 import random
 import joblib
 import pandas as pd
+import datetime
 
 app = Flask(__name__)
 
@@ -320,13 +321,22 @@ def index_post():
     print(f[0:1])
     features = f[["meanFix", "maxFix", "varFix", "xDir", "yDir", "fixDensPerBB", "blinkMean", "blinkRate", "stdDisp", "varDis"]]
     prediction = linear.predict(features[-1:])
-    print(prediction)
+    prediction_prob = linear.predict_proba(features[-1:])
+    now = datetime.datetime.now()
 
+    action = "unknown"
+
+    if prediction[0] == "Search":
+        action = "Search action"
+    if prediction[0] == "Read":
+        action = "Read action"
+    if prediction[0] == "Inspection":
+        action = "Inspection action"
 
     return {
-        "activity": "Search action",
-        "probability": "0.87",
-        "time": "2022-10-14T02:02:02Z",
+        "activity": action,
+        "probability": max(prediction_prob[0]),
+        "time": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
 
